@@ -3,6 +3,7 @@
 import streamlit as st
 from streamlit_cookies_manager import EncryptedCookieManager
 from utils import (
+    db,  # Ensure 'db' is imported from utils.py
     register_user,
     login_user,
     send_friend_request,
@@ -19,20 +20,20 @@ import datetime
 import time
 import os
 
-# Initialize Cookie Manager with a unique key from secrets
+# 1. Set Streamlit Page Configuration
+st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
+
+# 2. Initialize Cookie Manager with a unique key from secrets
 cookies = EncryptedCookieManager(
     prefix="quran_recitation_app/",
     password=st.secrets["cookies_password"],  # Securely fetched from secrets
 )
 
-# Ensure the cookie manager is initialized
+# 3. Ensure the cookie manager is initialized
 if not cookies.ready():
     st.stop()
 
-# Set Streamlit Page Configuration
-st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
-
-# Initialize Session State
+# 4. Initialize Session State
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "user" not in st.session_state:
@@ -40,14 +41,14 @@ if "user" not in st.session_state:
 if "navigate_to" not in st.session_state:
     st.session_state["navigate_to"] = None  # Initialize navigation flag
 
-# Check for existing auth token in cookies
+# 5. Check for existing auth token in cookies
 if not st.session_state["logged_in"]:
     auth_token = cookies.get("auth_token")
     if auth_token:
         user_id = verify_auth_token(auth_token)
         if user_id:
             # Fetch user details from Firestore
-            user_doc = utils.db.collection("users").document(user_id).get()
+            user_doc = db.collection("users").document(user_id).get()
             if user_doc.exists:
                 user = user_doc.to_dict()
                 user["id"] = user_doc.id
@@ -55,13 +56,13 @@ if not st.session_state["logged_in"]:
                 st.session_state["user"] = user
 
 
-# Helper function to load images
+# 6. Helper function to load images
 def load_image(image_name):
     image_path = os.path.join("images", image_name)
     return image_path
 
 
-# Navigation
+# 7. Navigation
 def main():
     # Handle navigation before rendering widgets
     if st.session_state["navigate_to"] == "Login":
@@ -96,7 +97,7 @@ def main():
             logout()
 
 
-# Registration Page
+# 8. Registration Page
 def register():
     st.title("Register")
 
@@ -128,7 +129,7 @@ def register():
             st.error("Please fill out all fields.")
 
 
-# Login Page
+# 9. Login Page
 def login():
     st.title("Login")
 
@@ -174,7 +175,7 @@ def login():
             st.error("Please enter both username and password.")
 
 
-# Logout Function
+# 10. Logout Function
 def logout():
     # Retrieve the auth token from cookies
     auth_token = cookies.get("auth_token")
@@ -201,7 +202,7 @@ def logout():
     st.experimental_rerun()
 
 
-# Dashboard Page
+# 11. Dashboard Page
 def dashboard():
     st.title("Dashboard")
     user_id = st.session_state["user"]["id"]
@@ -223,7 +224,7 @@ def dashboard():
         st.info("No active streaks. Start reciting to build streaks!")
 
 
-# Friends Management Page
+# 12. Friends Management Page
 def manage_friends():
     st.title("Your Friends")
     friends = get_friends(st.session_state["user"]["id"])
@@ -250,7 +251,7 @@ def manage_friends():
             st.error("Please enter a username.")
 
 
-# Friend Requests Management Page
+# 13. Friend Requests Management Page
 def manage_friend_requests():
     st.title("Friend Requests")
     user_id = st.session_state["user"]["id"]
