@@ -425,7 +425,7 @@ def verify_auth_token(token):
     except Exception as e:
         logging.error(f"Error verifying auth token: {e}")
         st.error(
-            "An error occurred while verifying your session. Please try logging in again."
+            f"An error occurred while verifying your session. Please try logging in again. {e}"
         )
     return None
 
