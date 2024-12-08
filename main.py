@@ -14,6 +14,7 @@ from utils import (
 import datetime
 import time  # Import time module for sleep functionality
 import os  # Import os for file path handling
+from urllib.parse import unquote
 
 # Set Streamlit Page Configuration
 st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
@@ -33,8 +34,101 @@ def load_image(image_name):
     return image_path
 
 
+# Function to retrieve all cookies
+def get_all_cookies():
+    """
+    WARNING: This uses unsupported feature of Streamlit
+    Returns the cookies as a dictionary of key-value pairs
+    """
+    from streamlit.web.server.websocket_headers import _get_websocket_headers
+
+    # https://github.com/streamlit/streamlit/pull/5457
+
+    headers = _get_websocket_headers()
+    if headers is None:
+        return {}
+
+    if "Cookie" not in headers:
+        return {}
+
+    cookie_string = headers["Cookie"]
+    # A sample cookie string: "K1=V1; K2=V2; K3=V3"
+    cookie_kv_pairs = cookie_string.split(";")
+
+    cookie_dict = {}
+    for kv in cookie_kv_pairs:
+        if "=" in kv:
+            k_and_v = kv.split("=", 1)
+            k = k_and_v[0].strip()
+            v = k_and_v[1].strip()
+            cookie_dict[k] = unquote(
+                v
+            )  # e.g., Convert name%40company.com to name@company.com
+    return cookie_dict
+
+
+# Function to set a cookie via JavaScript
+def set_cookie(key, value, days=30):
+    js = f"""
+    <script>
+    function setCookie(name, value, days) {{
+        var expires = "";
+        if (days) {{
+            var date = new Date();
+            date.setTime(date.getTime() + (days*24*60*60*1000));
+            expires = "; expires=" + date.toUTCString();
+        }}
+        document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    }}
+    setCookie("{key}", "{value}", {days});
+    </script>
+    """
+    st.markdown(js, unsafe_allow_html=True)
+
+
+# Function to delete a cookie via JavaScript
+def delete_cookie(key):
+    js = f"""
+    <script>
+    function deleteCookie(name) {{
+        document.cookie = name+'=; Max-Age=-99999999;';
+    }}
+    deleteCookie("{key}");
+    </script>
+    """
+    st.markdown(js, unsafe_allow_html=True)
+
+
+# Function to validate auth token with Firestore
+def validate_auth_token(auth_token):
+    users_ref = db.collection("users")
+    query = users_ref.where("auth_token", "==", auth_token).stream()
+    user = None
+    for doc in query:
+        user = doc.to_dict()
+        user["id"] = doc.id
+        break
+    if user:
+        return user
+    return None
+
+
 # Navigation
 def main():
+    # Retrieve all cookies
+    cookies = get_all_cookies()
+    auth_token = cookies.get("auth_token")
+
+    if auth_token and not st.session_state["logged_in"]:
+        # Validate the auth token
+        user = validate_auth_token(auth_token)
+        if user:
+            st.session_state["logged_in"] = True
+            st.session_state["user"] = user
+        else:
+            # Invalid token; delete the cookie
+            delete_cookie("auth_token")
+
     # Handle navigation before rendering widgets
     if st.session_state["navigate_to"] == "Login":
         st.session_state["page_choice"] = "Login"
@@ -72,8 +166,8 @@ def main():
 def register():
     st.title("Register")
 
-    # Display the image at the top
-    st.image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top, centered
+    center_image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("registration_form"):
         username = st.text_input("Username")
@@ -104,8 +198,8 @@ def register():
 def login():
     st.title("Login")
 
-    # Display the image at the top
-    st.image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top, centered
+    center_image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("login_form"):
         username = st.text_input("Username")
@@ -118,6 +212,16 @@ def login():
                 # Update session state
                 st.session_state["logged_in"] = True
                 st.session_state["user"] = result
+
+                # Generate a unique auth token
+                auth_token = str(uuid.uuid4())
+
+                # Store the auth token in Firestore
+                user_doc = db.collection("users").document(result["id"])
+                user_doc.update({"auth_token": auth_token})
+
+                # Set the auth token cookie via JavaScript
+                set_cookie("auth_token", auth_token, days=30)
 
                 # Create a placeholder for the success message
                 placeholder = st.empty()
@@ -144,6 +248,14 @@ def logout():
     # Update session state
     st.session_state["logged_in"] = False
     st.session_state["user"] = None
+
+    # Remove auth token from Firestore
+    if "user" in st.session_state and st.session_state["user"]:
+        user_doc = db.collection("users").document(st.session_state["user"]["id"])
+        user_doc.update({"auth_token": ""})  # Clear the auth token
+
+    # Delete the auth token cookie via JavaScript
+    delete_cookie("auth_token")
 
     # Create a placeholder for the success message
     placeholder = st.empty()
