@@ -93,7 +93,7 @@ def register():
                 # Set the navigation flag to "Login"
                 st.session_state["navigate_to"] = "Login"
                 # Refresh the app to navigate to the login page
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(message)
         else:
@@ -132,7 +132,7 @@ def login():
                 placeholder.empty()
 
                 # Refresh the app to navigate to the dashboard
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(result)
         else:
