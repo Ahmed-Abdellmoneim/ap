@@ -156,7 +156,7 @@ def logout():
     placeholder.empty()
 
     # Refresh the app to navigate back to login/register
-    st.experimental_rerun()
+    st.rerun()
 
 
 # Dashboard Page
