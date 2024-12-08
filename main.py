@@ -33,18 +33,6 @@ def load_image(image_name):
     return image_path
 
 
-# Helper function to center images
-def center_image(image_path, width=300):
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center;">
-            <img src="{image_path}" width="{width}">
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 # Navigation
 def main():
     # Handle navigation before rendering widgets
@@ -84,8 +72,8 @@ def main():
 def register():
     st.title("Register")
 
-    # Display the image at the top, centered
-    center_image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top
+    st.image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("registration_form"):
         username = st.text_input("Username")
@@ -105,7 +93,7 @@ def register():
                 # Set the navigation flag to "Login"
                 st.session_state["navigate_to"] = "Login"
                 # Refresh the app to navigate to the login page
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(message)
         else:
@@ -116,8 +104,8 @@ def register():
 def login():
     st.title("Login")
 
-    # Display the image at the top, centered
-    center_image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top
+    st.image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("login_form"):
         username = st.text_input("Username")
@@ -144,7 +132,7 @@ def login():
                 placeholder.empty()
 
                 # Refresh the app to navigate to the dashboard
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(result)
         else:
@@ -168,7 +156,7 @@ def logout():
     placeholder.empty()
 
     # Refresh the app to navigate back to login/register
-    st.experimental_rerun()
+    st.rerun()
 
 
 # Dashboard Page
@@ -235,7 +223,7 @@ def manage_friend_requests():
                     if success:
                         st.success("Friend request accepted.")
                         # Optionally, you can refresh the page to update the list
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("Failed to accept friend request.")
             with col2:
@@ -244,7 +232,7 @@ def manage_friend_requests():
                     if success:
                         st.warning("Friend request rejected.")
                         # Optionally, you can refresh the page to update the list
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("Failed to reject friend request.")
     else:
