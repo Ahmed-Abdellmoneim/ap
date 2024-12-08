@@ -181,7 +181,7 @@ def logout():
     auth_token = cookies.get("auth_token")
     if auth_token:
         delete_auth_token(auth_token)
-        cookies["auth_token"] = None  # Set the cookie to None
+        del cookies["auth_token"]  # Correctly delete the cookie
         cookies.save()
 
     # Update session state
@@ -200,6 +200,7 @@ def logout():
 
     # Refresh the app to navigate back to login/register
     st.rerun()
+
 
 
 
