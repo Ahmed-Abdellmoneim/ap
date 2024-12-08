@@ -13,7 +13,6 @@ from utils import (
 )
 import datetime
 import time  # Import time module for sleep functionality
-import os  # Import os for file path handling
 
 # Set Streamlit Page Configuration
 st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
@@ -25,12 +24,6 @@ if "user" not in st.session_state:
     st.session_state["user"] = None
 if "navigate_to" not in st.session_state:
     st.session_state["navigate_to"] = None  # Initialize navigation flag
-
-
-# Helper function to load images
-def load_image(image_name):
-    image_path = os.path.join("images", image_name)
-    return image_path
 
 
 # Navigation
@@ -71,10 +64,6 @@ def main():
 # Registration Page
 def register():
     st.title("Register")
-    
-    # Display the image at the top
-    st.image(load_image("1.png"), width=600)  # Adjust width as needed
-    
     with st.form("registration_form"):
         username = st.text_input("Username")
         email = st.text_input("Email")
@@ -103,10 +92,6 @@ def register():
 # Login Page
 def login():
     st.title("Login")
-    
-    # Display the image at the top
-    st.image(load_image("1.png"), width=600)  # Adjust width as needed
-    
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
