@@ -14,7 +14,6 @@ from utils import (
     create_auth_token,
     verify_auth_token,
     delete_auth_token,
-    db
 )
 import datetime
 import time
