@@ -73,7 +73,7 @@ def register():
     st.title("Register")
     
     # Display the image at the top
-    st.image(load_image("images\افعلوا الخير.png"), width=200)  # Adjust width as needed
+    st.image(load_image("images/1.png"), width=200)  # Adjust width as needed
     
     with st.form("registration_form"):
         username = st.text_input("Username")
@@ -105,7 +105,7 @@ def login():
     st.title("Login")
     
     # Display the image at the top
-    st.image(load_image("images\افعلوا الخير.png"), width=200)  # Adjust width as needed
+    st.image(load_image("images/1.png"), width=200)  # Adjust width as needed
     
     with st.form("login_form"):
         username = st.text_input("Username")
