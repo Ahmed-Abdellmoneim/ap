@@ -21,14 +21,16 @@ import os
 import json
 from google.cloud import firestore
 
-# Retrieve the password from Streamlit secrets
-password = st.secrets["cookies_password"]
+# Initialize Firestore Client
+# (Assuming utils.py already initializes Firestore as 'db')
 
+# Initialize Cookie Manager with a unique key
 cookies = EncryptedCookieManager(
-    prefix="my_app/",
-    password=password,
+    prefix="quran_recitation_app/",
+    password="your_super_secret_password_change_this",
 )
 
+# Ensure the cookie manager is initialized
 if not cookies.ready():
     st.stop()
 
@@ -46,7 +48,6 @@ if "navigate_to" not in st.session_state:
 # Check for existing auth token in cookies
 if not st.session_state["logged_in"]:
     auth_token = cookies.get("auth_token")
-    print(auth_token)
     if auth_token:
         user_id = verify_auth_token(auth_token)
         if user_id:
