@@ -6,6 +6,8 @@ import datetime
 import streamlit as st
 import json
 from google.oauth2 import service_account
+import uuid  # For generating unique tokens
+
 
 # Initialize Firestore Client
 def init_firestore():
@@ -13,14 +15,18 @@ def init_firestore():
         # Load Firestore credentials from Streamlit secrets
         credentials_info = st.secrets["firestore_credentials"]
         credentials_dict = json.loads(credentials_info)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        return firestore.Client(credentials=credentials, project=credentials_dict['project_id'])
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_dict
+        )
+        return firestore.Client(
+            credentials=credentials, project=credentials_dict["project_id"]
+        )
     except KeyError:
         st.error("Firestore credentials not found in secrets.")
         raise
 
-db = init_firestore()
 
+db = init_firestore()
 
 
 # Password Hashing
@@ -35,20 +41,12 @@ def verify_password(password, hashed):
 # User Registration
 def register_user(username, email, password):
     users_ref = db.collection("users")
-    # Check if username already exists using keyword arguments
-    query = (
-        users_ref.where(field_path="username", op_string="==", value=username)
-        .limit(1)
-        .stream()
-    )
+    # Check if username already exists
+    query = users_ref.where("username", "==", username).limit(1).stream()
     if any(True for _ in query):
         return False, "Username already exists."
-    # Check if email already exists using keyword arguments
-    query = (
-        users_ref.where(field_path="email", op_string="==", value=email)
-        .limit(1)
-        .stream()
-    )
+    # Check if email already exists
+    query = users_ref.where("email", "==", email).limit(1).stream()
     if any(True for _ in query):
         return False, "Email already exists."
     # Hash the password
@@ -68,11 +66,7 @@ def register_user(username, email, password):
 # User Login
 def login_user(username, password):
     users_ref = db.collection("users")
-    query = (
-        users_ref.where(field_path="username", op_string="==", value=username)
-        .limit(1)
-        .stream()
-    )
+    query = users_ref.where("username", "==", username).limit(1).stream()
     user = None
     for doc in query:
         user = doc.to_dict()
@@ -88,11 +82,7 @@ def login_user(username, password):
 def send_friend_request(from_user_id, to_username):
     users_ref = db.collection("users")
     # Get the to_user_id
-    query = (
-        users_ref.where(field_path="username", op_string="==", value=to_username)
-        .limit(1)
-        .stream()
-    )
+    query = users_ref.where("username", "==", to_username).limit(1).stream()
     to_user = None
     for doc in query:
         to_user = doc.to_dict()
@@ -102,32 +92,22 @@ def send_friend_request(from_user_id, to_username):
         return False, "User not found."
     if to_user["id"] == from_user_id:
         return False, "You cannot send a friend request to yourself."
-    # Check if a friendship already exists using keyword arguments
+    # Check if a friendship already exists
     friendships_ref = db.collection("friendships")
     friendship_query = (
-        friendships_ref.where(
-            field_path="user1_id",
-            op_string="==",
-            value=min(from_user_id, to_user["id"]),
-        )
-        .where(
-            field_path="user2_id",
-            op_string="==",
-            value=max(from_user_id, to_user["id"]),
-        )
+        friendships_ref.where("user1_id", "==", min(from_user_id, to_user["id"]))
+        .where("user2_id", "==", max(from_user_id, to_user["id"]))
         .limit(1)
         .stream()
     )
     if any(True for _ in friendship_query):
         return False, "You are already friends."
-    # Check if a friend request is already pending using keyword arguments
+    # Check if a friend request is already pending
     friend_requests_ref = db.collection("friend_requests")
     request_query = (
-        friend_requests_ref.where(
-            field_path="from_user_id", op_string="==", value=from_user_id
-        )
-        .where(field_path="to_user_id", op_string="==", value=to_user["id"])
-        .where(field_path="status", op_string="==", value="pending")
+        friend_requests_ref.where("from_user_id", "==", from_user_id)
+        .where("to_user_id", "==", to_user["id"])
+        .where("status", "==", "pending")
         .limit(1)
         .stream()
     )
@@ -148,10 +128,8 @@ def send_friend_request(from_user_id, to_username):
 def get_friend_requests(user_id):
     friend_requests_ref = db.collection("friend_requests")
     query = (
-        friend_requests_ref.where(
-            field_path="to_user_id", op_string="==", value=user_id
-        )
-        .where(field_path="status", op_string="==", value="pending")
+        friend_requests_ref.where("to_user_id", "==", user_id)
+        .where("status", "==", "pending")
         .stream()
     )
     requests = []
@@ -217,9 +195,7 @@ def respond_friend_request(request_id, accept=True):
 def get_friends(user_id):
     friendships_ref = db.collection("friendships")
     # Fetch friendships where user is user1
-    query1 = friendships_ref.where(
-        field_path="user1_id", op_string="==", value=user_id
-    ).stream()
+    query1 = friendships_ref.where("user1_id", "==", user_id).stream()
     friends = []
     for doc in query1:
         friendship = doc.to_dict()
@@ -230,9 +206,7 @@ def get_friends(user_id):
             friend["id"] = friend_doc.id
             friends.append(friend)
     # Fetch friendships where user is user2
-    query2 = friendships_ref.where(
-        field_path="user2_id", op_string="==", value=user_id
-    ).stream()
+    query2 = friendships_ref.where("user2_id", "==", user_id).stream()
     for doc in query2:
         friendship = doc.to_dict()
         friend_id = friendship["user1_id"]
@@ -275,8 +249,8 @@ def mark_recitation(user_id):
     # Create or update recitation record for today
     # Firestore automatically handles datetime comparisons correctly
     today_recitation_query = (
-        recitations_ref.where(field_path="user_id", op_string="==", value=user_id)
-        .where(field_path="date", op_string="==", value=now)
+        recitations_ref.where("user_id", "==", user_id)
+        .where("date", "==", now.date())
         .limit(1)
         .stream()
     )
@@ -284,7 +258,7 @@ def mark_recitation(user_id):
         # Add recitation record
         recitation_data = {
             "user_id": user_id,
-            "date": now,  # Stored as datetime.datetime (timezone-aware)
+            "date": now.date(),  # Store date only
             "recited_at": now,
         }
         recitations_ref.add(recitation_data)
@@ -295,10 +269,8 @@ def mark_recitation(user_id):
         ordered_ids = sorted([user_id, friend_id])
         # Query the streak document
         streak_query = (
-            streaks_ref.where(
-                field_path="user1_id", op_string="==", value=ordered_ids[0]
-            )
-            .where(field_path="user2_id", op_string="==", value=ordered_ids[1])
+            streaks_ref.where("user1_id", "==", ordered_ids[0])
+            .where("user2_id", "==", ordered_ids[1])
             .limit(1)
             .stream()
         )
@@ -346,10 +318,8 @@ def mark_recitation(user_id):
             ordered_ids = sorted([user_id, friend_id])
             # Query the streak document
             streak_query = (
-                streaks_ref.where(
-                    field_path="user1_id", op_string="==", value=ordered_ids[0]
-                )
-                .where(field_path="user2_id", op_string="==", value=ordered_ids[1])
+                streaks_ref.where("user1_id", "==", ordered_ids[0])
+                .where("user2_id", "==", ordered_ids[1])
                 .limit(1)
                 .stream()
             )
@@ -370,13 +340,9 @@ def mark_recitation(user_id):
 def get_streaks(user_id):
     streaks_ref = db.collection("streaks")
     # Fetch where user is user1
-    query1 = streaks_ref.where(
-        field_path="user1_id", op_string="==", value=user_id
-    ).stream()
+    query1 = streaks_ref.where("user1_id", "==", user_id).stream()
     # Fetch where user is user2
-    query2 = streaks_ref.where(
-        field_path="user2_id", op_string="==", value=user_id
-    ).stream()
+    query2 = streaks_ref.where("user2_id", "==", user_id).stream()
     streaks = []
     now = datetime.datetime.now(datetime.timezone.utc)
     for doc in query1:
@@ -416,3 +382,51 @@ def get_streaks(user_id):
                 streak["current_streak"] = 0
         streaks.append(streak)
     return streaks
+
+
+# Authentication Token Management
+
+
+# Function to generate a unique token
+def generate_auth_token():
+    return str(uuid.uuid4())
+
+
+# Function to create a token for a user and store it in Firestore
+def create_auth_token(user_id):
+    tokens_ref = db.collection("auth_tokens")
+    token = generate_auth_token()
+    token_data = {
+        "token": token,
+        "user_id": user_id,
+        "created_at": datetime.datetime.now(datetime.timezone.utc),
+        "expires_at": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(days=30),  # Token valid for 30 days
+    }
+    tokens_ref.add(token_data)
+    return token
+
+
+# Function to verify a token and retrieve the associated user
+def verify_auth_token(token):
+    tokens_ref = db.collection("auth_tokens")
+    query = (
+        tokens_ref.where("token", "==", token)
+        .where("expires_at", ">", datetime.datetime.now(datetime.timezone.utc))
+        .limit(1)
+        .stream()
+    )
+    for doc in query:
+        token_data = doc.to_dict()
+        return token_data["user_id"]
+    return None
+
+
+# Function to delete a token (e.g., on logout)
+def delete_auth_token(token):
+    tokens_ref = db.collection("auth_tokens")
+    query = tokens_ref.where("token", "==", token).limit(1).stream()
+    for doc in query:
+        tokens_ref.document(doc.id).delete()
+        return True
+    return False
