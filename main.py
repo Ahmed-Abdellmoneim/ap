@@ -16,7 +16,7 @@ import time  # Import time module for sleep functionality
 import os  # Import os for file path
 
 
-from streamlit_cookies_manager import set_cookie, get_cookie, expire_cookie, EncryptedCookieManager
+from streamlit_cookies_manager import  EncryptedCookieManager
 
 # Set Streamlit Page Configuration
 st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
