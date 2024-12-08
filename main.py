@@ -223,7 +223,7 @@ def manage_friend_requests():
                     if success:
                         st.success("Friend request accepted.")
                         # Optionally, you can refresh the page to update the list
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("Failed to accept friend request.")
             with col2:
@@ -232,7 +232,7 @@ def manage_friend_requests():
                     if success:
                         st.warning("Friend request rejected.")
                         # Optionally, you can refresh the page to update the list
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("Failed to reject friend request.")
     else:
