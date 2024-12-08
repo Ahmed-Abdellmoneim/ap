@@ -408,8 +408,6 @@ def create_auth_token(user_id):
     return token
 
 
-
-
 def verify_auth_token(token):
     tokens_ref = db.collection("auth_tokens")
     try:

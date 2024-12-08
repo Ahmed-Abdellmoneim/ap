@@ -23,6 +23,10 @@ import os
 # 1. Set Streamlit Page Configuration
 st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
 
+# 2. Determine if the app is running in production
+# You can set an environment variable 'PRODUCTION' to 'True' in your deployment
+is_production = os.getenv("PRODUCTION", "False") == "True"
+
 # 2. Initialize Cookie Manager with a unique key from secrets
 cookies = EncryptedCookieManager(
     prefix="quran_recitation_app/",
@@ -200,8 +204,6 @@ def logout():
 
     # Refresh the app to navigate back to login/register
     st.rerun()
-
-
 
 
 # 11. Dashboard Page
