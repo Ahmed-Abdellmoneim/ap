@@ -162,7 +162,7 @@ def dashboard():
     if active_streaks:
         for streak in active_streaks:
             st.write(
-                f"**{streak['friend_username']}**: {streak['current_streak']} day(s) streak"
+                f"**{streak['friend_username']}**: {streak['current_streak']} 🔥"
             )
     else:
         st.info("No active streaks. Start reciting to build streaks!")
