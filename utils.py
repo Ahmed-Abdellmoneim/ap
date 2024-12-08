@@ -14,7 +14,7 @@ def init_firestore():
         credentials_info = st.secrets["firestore_credentials"]
         credentials_dict = json.loads(credentials_info)
         credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        return firestore.Client(credentials=credentials, project=credentials_dict['project_id'])
+        return firestore.Client(credentials=credentials, project=credentials_dict['quran-streaks'])
     except KeyError:
         st.error("Firestore credentials not found in secrets.")
         raise
