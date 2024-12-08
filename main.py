@@ -14,6 +14,7 @@ from utils import (
     create_auth_token,
     verify_auth_token,
     delete_auth_token,
+    db
 )
 import datetime
 import time
@@ -46,6 +47,7 @@ if "navigate_to" not in st.session_state:
 # Check for existing auth token in cookies
 if not st.session_state["logged_in"]:
     auth_token = cookies.get("auth_token")
+    print(auth_token)
     if auth_token:
         user_id = verify_auth_token(auth_token)
         if user_id:
