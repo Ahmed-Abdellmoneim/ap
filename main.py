@@ -14,6 +14,7 @@ from utils import (
 import datetime
 import time  # Import time module for sleep functionality
 import os  # Import os for file path handling
+import uuid  # Import uuid for generating unique tokens
 from urllib.parse import unquote
 
 # Set Streamlit Page Configuration
@@ -41,8 +42,6 @@ def get_all_cookies():
     Returns the cookies as a dictionary of key-value pairs
     """
     from streamlit.web.server.websocket_headers import _get_websocket_headers
-
-    # https://github.com/streamlit/streamlit/pull/5457
 
     headers = _get_websocket_headers()
     if headers is None:
@@ -166,8 +165,8 @@ def main():
 def register():
     st.title("Register")
 
-    # Display the image at the top, centered
-    center_image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top
+    st.image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("registration_form"):
         username = st.text_input("Username")
@@ -198,8 +197,8 @@ def register():
 def login():
     st.title("Login")
 
-    # Display the image at the top, centered
-    center_image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top
+    st.image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("login_form"):
         username = st.text_input("Username")
