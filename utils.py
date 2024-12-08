@@ -7,6 +7,7 @@ import streamlit as st
 import json
 from google.oauth2 import service_account
 import uuid  # For generating unique tokens
+import logging
 
 
 # Initialize Firestore Client
@@ -407,18 +408,25 @@ def create_auth_token(user_id):
     return token
 
 
-# Function to verify a token and retrieve the associated user
+
+
 def verify_auth_token(token):
     tokens_ref = db.collection("auth_tokens")
-    query = (
-        tokens_ref.where("token", "==", token)
-        .where("expires_at", ">", datetime.datetime.now(datetime.timezone.utc))
-        .limit(1)
-        .stream()
-    )
-    for doc in query:
-        token_data = doc.to_dict()
-        return token_data["user_id"]
+    try:
+        query = (
+            tokens_ref.where("token", "==", token)
+            .where("expires_at", ">", datetime.datetime.now(datetime.timezone.utc))
+            .limit(1)
+            .stream()
+        )
+        for doc in query:
+            token_data = doc.to_dict()
+            return token_data.get("user_id")
+    except Exception as e:
+        logging.error(f"Error verifying auth token: {e}")
+        st.error(
+            "An error occurred while verifying your session. Please try logging in again."
+        )
     return None
 
 
