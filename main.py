@@ -1,7 +1,6 @@
 # app.py
 
 import streamlit as st
-from streamlit_cookies_manager import EncryptedCookieManager
 from utils import (
     register_user,
     login_user,
@@ -11,28 +10,13 @@ from utils import (
     get_friends,
     mark_recitation,
     get_streaks,
-    create_auth_token,
-    verify_auth_token,
-    delete_auth_token,
 )
 import datetime
-import time
-import os
-import json
-from google.cloud import firestore
+import time  # Import time module for sleep functionality
+import os  # Import os for file path
 
-# Initialize Firestore Client
-# (Assuming utils.py already initializes Firestore as 'db')
 
-# Initialize Cookie Manager with a unique key
-cookies = EncryptedCookieManager(
-    prefix="quran_recitation_app/",
-    password="your_super_secret_password_change_this",
-)
-
-# Ensure the cookie manager is initialized
-if not cookies.ready():
-    st.stop()
+from streamlit_cookies_manager import set_cookie, get_cookie, expire_cookie, EncryptedCookieManager
 
 # Set Streamlit Page Configuration
 st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
@@ -44,20 +28,6 @@ if "user" not in st.session_state:
     st.session_state["user"] = None
 if "navigate_to" not in st.session_state:
     st.session_state["navigate_to"] = None  # Initialize navigation flag
-
-# Check for existing auth token in cookies
-if not st.session_state["logged_in"]:
-    auth_token = cookies.get("auth_token")
-    if auth_token:
-        user_id = verify_auth_token(auth_token)
-        if user_id:
-            # Fetch user details from Firestore
-            user_doc = db.collection("users").document(user_id).get()
-            if user_doc.exists:
-                user = user_doc.to_dict()
-                user["id"] = user_doc.id
-                st.session_state["logged_in"] = True
-                st.session_state["user"] = user
 
 
 # Helper function to load images
@@ -148,16 +118,9 @@ def login():
         if username and password:
             success, result = login_user(username, password)
             if success:
-                user = result
-                # Generate and store auth token
-                token = create_auth_token(user["id"])
-                # Set the auth token in cookies
-                cookies["auth_token"] = token
-                cookies.save()
-
                 # Update session state
                 st.session_state["logged_in"] = True
-                st.session_state["user"] = user
+                st.session_state["user"] = result
 
                 # Create a placeholder for the success message
                 placeholder = st.empty()
@@ -181,13 +144,6 @@ def login():
 
 # Logout Function
 def logout():
-    # Retrieve the auth token from cookies
-    auth_token = cookies.get("auth_token")
-    if auth_token:
-        delete_auth_token(auth_token)
-        cookies.delete("auth_token")
-        cookies.save()
-
     # Update session state
     st.session_state["logged_in"] = False
     st.session_state["user"] = None
