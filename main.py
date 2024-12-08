@@ -14,6 +14,18 @@ from utils import (
 import datetime
 import time  # Import time module for sleep functionality
 import os  # Import os for file path handling
+import uuid  # Import uuid for generating unique tokens
+from streamlit_cookies_manager import EncryptedCookieManager  # Import Cookies Manager
+
+# Initialize Cookies Manager
+cookies = EncryptedCookieManager(
+    prefix="quran_tracker/",
+    password="your_secure_password_here",  # Replace with a secure password
+)
+
+# Wait for the cookies to load
+if not cookies.ready():
+    st.stop()
 
 # Set Streamlit Page Configuration
 st.set_page_config(page_title="Quran Recitation Tracker", layout="wide")
@@ -33,8 +45,41 @@ def load_image(image_name):
     return image_path
 
 
+# Helper function to center images
+def center_image(image_path, width=300):
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center;">
+            <img src="{image_path}" width="{width}">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 # Navigation
 def main():
+    # Check for auth token in cookies
+    auth_token = cookies.get("auth_token")
+
+    if auth_token and not st.session_state["logged_in"]:
+        # Query Firestore to find the user with this auth_token
+        users_ref = db.collection("users")
+        query = users_ref.where("auth_token", "==", auth_token).stream()
+        user = None
+        for doc in query:
+            user = doc.to_dict()
+            user["id"] = doc.id
+            break
+        if user:
+            # Set session state
+            st.session_state["logged_in"] = True
+            st.session_state["user"] = user
+        else:
+            # Invalid token; clear the cookie
+            del cookies["auth_token"]
+            cookies.save()
+
     # Handle navigation before rendering widgets
     if st.session_state["navigate_to"] == "Login":
         st.session_state["page_choice"] = "Login"
@@ -72,8 +117,8 @@ def main():
 def register():
     st.title("Register")
 
-    # Display the image at the top
-    st.image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top, centered
+    center_image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("registration_form"):
         username = st.text_input("Username")
@@ -104,8 +149,8 @@ def register():
 def login():
     st.title("Login")
 
-    # Display the image at the top
-    st.image(load_image("1.png"), width=600)  # Adjust width as needed
+    # Display the image at the top, centered
+    center_image(load_image("1.png"), width=600)  # Adjust width as needed
 
     with st.form("login_form"):
         username = st.text_input("Username")
@@ -118,6 +163,17 @@ def login():
                 # Update session state
                 st.session_state["logged_in"] = True
                 st.session_state["user"] = result
+
+                # Generate a unique token
+                auth_token = str(uuid.uuid4())
+
+                # Store the token in the user's Firestore document
+                user_doc = db.collection("users").document(result["id"])
+                user_doc.update({"auth_token": auth_token})
+
+                # Set the auth token in a cookie
+                cookies["auth_token"] = auth_token
+                cookies.save()
 
                 # Create a placeholder for the success message
                 placeholder = st.empty()
@@ -144,6 +200,16 @@ def logout():
     # Update session state
     st.session_state["logged_in"] = False
     st.session_state["user"] = None
+
+    # Remove auth token from Firestore
+    if "user" in st.session_state and st.session_state["user"]:
+        user_doc = db.collection("users").document(st.session_state["user"]["id"])
+        user_doc.update({"auth_token": ""})  # Clear the auth token
+
+    # Delete the auth token cookie
+    if "auth_token" in cookies:
+        del cookies["auth_token"]
+        cookies.save()
 
     # Create a placeholder for the success message
     placeholder = st.empty()
