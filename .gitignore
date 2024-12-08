@@ -1,0 +1,19 @@
+# .gitignore
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv/
+.env/
+
+# Firestore Credentials
+firestore_credentials.json
+
+# Streamlit Cache
+.streamlit/
