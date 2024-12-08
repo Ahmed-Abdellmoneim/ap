@@ -10,6 +10,7 @@ from utils import (
     get_friends,
     mark_recitation,
     get_streaks,
+    db,  # Import Firestore client
 )
 import datetime
 import time  # Import time module for sleep functionality
